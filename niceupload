@@ -5,6 +5,9 @@
 SERVER=server1359.seedhost.eu
 DESTBASE="/home/chjones"
 
+# limit bandwidth to this number of kilobytes per second
+KBPS=4096
+
 # Where to find the necessary programs
 SSH=/bin/dbclient # should be compatible with basic ssh
 NICE=/bin/nice
