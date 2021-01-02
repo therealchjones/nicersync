@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# UPLOAD will be used as a command unquoted. Use escapes as needed.
+UPLOAD='/bin/ionice -c 3 /bin/nice -n 10 /bin/rsync -rlptP --bwlimit 4096 -e /bin/dbclient'
+SERVER=server1359.seedhost.eu
+DESTBASE="/home/chjones"
+
+usage() {
+	echo "Usage: $0 [-hqv] [path] [path...]"
+}
+
+VERBOSE="N"
+while [ "${1#-}" != "$1" ]; do
+	for opt in `echo "${1#-}" | sed -E 's/(.)/\1 /g'`; do
+		case "$opt" in
+			"v" )
+				VERBOSE="Y"
+				UPLOAD="$UPLOAD -v"
+				;;
+			"q" )
+				VERBOSE="N"
+				;;
+			"h" ) 
+				usage
+				exit 0
+				;;
+			""|" " ) ;;
+			* ) 
+				echo "Unknown option: ${opt}" >&2
+				usage >&2
+				exit 1
+		esac
+	done
+	shift
+done
+if [ "$VERBOSE" == "N" ]; then
+	UPLOAD="$UPLOAD -q"
+fi
+
+for path in "$@"; do
+	if [ ! -r "$path" ]; then
+		echo "Unable to access $path" >&2
+		usage >&2
+		exit 1
+	fi
+done
+
+for path in "$@"; do
+	case "$path" in
+		*/Movies|*/Movies/ )
+			if [ "${path%/}" == "${path}" ]; then
+				path="$path"/
+			fi
+			DESTDIR="$DESTBASE/Media/Video/Movies" ;;
+		*/TV|*/TV/ )
+			if [ "${path%/}" == "${path}" ]; then
+				path="$path"/
+			fi
+			DESTDIR="$DESTBASE/Media/Video/TV" ;;
+		* )
+			while [ "${path%/}" != "$path" ]; do
+				path="${path%/}"
+			done
+			DESTDIR="$DESTBASE/downloads" ;;
+	esac
+	if [ "$VERBOSE" == "Y" ]; then
+		echo "Uploading $path to $SERVER:$DESTDIR"
+	fi
+	$UPLOAD "${path}" "${SERVER}:${DESTDIR}"
+done
