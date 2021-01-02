@@ -1,9 +1,23 @@
 #!/bin/sh
 
-# UPLOAD will be used as a command unquoted. Use escapes as needed.
-UPLOAD='/bin/ionice -c 3 /bin/nice -n 10 /bin/rsync -rlptP --bwlimit 4096 -e /bin/dbclient'
+# SERVER will be accessed via ssh/dbclient. Highly recommend setting up passwordless
+# authentication prior to use here.
 SERVER=server1359.seedhost.eu
 DESTBASE="/home/chjones"
+
+# Where to find the necessary programs
+SSH=/bin/dbclient # should be compatible with basic ssh
+NICE=/bin/nice
+IONICE=/bin/ionice
+RSYNC=/bin/rsync
+
+# Commands with their options, without arguments
+# These will be used unquoted; escape as needed
+SSHCMD="$SSH"
+IONICECMD="$IONICE -c 3"
+NICECMD="$NICE -n 10"
+RSYNCCMD="$RSYNC -rlptP -bwlimit $KBPS -e $SSH"
+UPLOADCMD="$IONICECMD $NICECMD $RSYNCCMD"
 
 usage() {
 	echo "Usage: $0 [-hqv] [path] [path...]"
