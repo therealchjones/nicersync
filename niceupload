@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# SERVER will be accessed via ssh/dbclient. Highly recommend setting up passwordless
+# SERVER will be accessed via ssh. Highly recommend setting up passwordless
 # authentication prior to use here.
 SERVER=server1359.seedhost.eu
 DESTBASE="/home/chjones"
@@ -13,6 +13,22 @@ SSH=/bin/dbclient # should be compatible with basic ssh
 NICE=/bin/nice
 IONICE=/bin/ionice
 RSYNC=/bin/rsync
+
+for program in SSH NICE IONICE RSYNC; do 
+	if [ ! -x "${$program}" ]; then
+		$program="$( which ${$program} )"
+	fi
+done
+SSH="${SSH:-$( which ssh )}"
+NICE="${NICE:-$( which nice )}"
+IONICE="${NICE:-$( which ionice )}"
+RSYNC="${RSYNC:-$( which rsync )}"
+for program in SSH NICE IONICE RSYNC; do
+	if [ ! -x "${$program}" ]; then
+		echo "Unable to find a program for $program." >&2
+		exit 1
+	fi
+done
 
 # Commands with their options, without arguments
 # These will be used unquoted; escape as needed
@@ -66,16 +82,21 @@ done
 for path in "$@"; do
 	case "$path" in
 	*/Movies | */Movies/)
-		if [ "${path%/}" == "${path}" ]; then
+		if [ "${path%/}" = "${path}" ]; then
 			path="$path"/
 		fi
 		DESTDIR="$DESTBASE/Media/Video/Movies"
 		;;
 	*/TV | */TV/)
-		if [ "${path%/}" == "${path}" ]; then
+		if [ "${path%/}" = "${path}" ]; then
 			path="$path"/
 		fi
 		DESTDIR="$DESTBASE/Media/Video/TV"
+		;;
+	*/Video | */Videos/)
+		if [ "${path%/}" = "${path}" ]; then
+			path="$path"/
+		fi
 		;;
 	*)
 		while [ "${path%/}" != "$path" ]; do
@@ -84,7 +105,7 @@ for path in "$@"; do
 		DESTDIR="$DESTBASE/downloads"
 		;;
 	esac
-	if [ "$VERBOSE" == "Y" ]; then
+	if [ "$VERBOSE" = "Y" ]; then
 		echo "Uploading $path to $SERVER:$DESTDIR"
 	fi
 	$UPLOAD "${path}" "${SERVER}:${DESTDIR}"
