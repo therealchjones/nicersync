@@ -28,24 +28,25 @@ usage() {
 
 VERBOSE="N"
 while [ "${1#-}" != "$1" ]; do
-	for opt in `echo "${1#-}" | sed -E 's/(.)/\1 /g'`; do
+	for opt in $(echo "${1#-}" | sed -E 's/(.)/\1 /g'); do
 		case "$opt" in
-			"v" )
-				VERBOSE="Y"
-				UPLOAD="$UPLOAD -v"
-				;;
-			"q" )
-				VERBOSE="N"
-				;;
-			"h" ) 
-				usage
-				exit 0
-				;;
-			""|" " ) ;;
-			* ) 
-				echo "Unknown option: ${opt}" >&2
-				usage >&2
-				exit 1
+		"v")
+			VERBOSE="Y"
+			UPLOAD="$UPLOAD -v"
+			;;
+		"q")
+			VERBOSE="N"
+			;;
+		"h")
+			usage
+			exit 0
+			;;
+		"" | " ") ;;
+		*)
+			echo "Unknown option: ${opt}" >&2
+			usage >&2
+			exit 1
+			;;
 		esac
 	done
 	shift
@@ -64,21 +65,24 @@ done
 
 for path in "$@"; do
 	case "$path" in
-		*/Movies|*/Movies/ )
-			if [ "${path%/}" == "${path}" ]; then
-				path="$path"/
-			fi
-			DESTDIR="$DESTBASE/Media/Video/Movies" ;;
-		*/TV|*/TV/ )
-			if [ "${path%/}" == "${path}" ]; then
-				path="$path"/
-			fi
-			DESTDIR="$DESTBASE/Media/Video/TV" ;;
-		* )
-			while [ "${path%/}" != "$path" ]; do
-				path="${path%/}"
-			done
-			DESTDIR="$DESTBASE/downloads" ;;
+	*/Movies | */Movies/)
+		if [ "${path%/}" == "${path}" ]; then
+			path="$path"/
+		fi
+		DESTDIR="$DESTBASE/Media/Video/Movies"
+		;;
+	*/TV | */TV/)
+		if [ "${path%/}" == "${path}" ]; then
+			path="$path"/
+		fi
+		DESTDIR="$DESTBASE/Media/Video/TV"
+		;;
+	*)
+		while [ "${path%/}" != "$path" ]; do
+			path="${path%/}"
+		done
+		DESTDIR="$DESTBASE/downloads"
+		;;
 	esac
 	if [ "$VERBOSE" == "Y" ]; then
 		echo "Uploading $path to $SERVER:$DESTDIR"
