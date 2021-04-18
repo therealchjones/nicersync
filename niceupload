@@ -8,24 +8,19 @@ DESTBASE="/home/chjones"
 # limit bandwidth to this number of kilobytes per second
 KBPS=4096
 
-# Where to find the necessary programs
-SSH=/bin/dbclient # should be compatible with basic ssh
-NICE=/bin/nice
-IONICE=/bin/ionice
-RSYNC=/bin/rsync
+SSH="${SSH:-$(which ssh)}"
+NICE="${NICE:-$(which nice)}"
+IONICE="${NICE:-$(which ionice)}"
+RSYNC="${RSYNC:-$(which rsync)}"
 
-for program in SSH NICE IONICE RSYNC; do 
-	if [ ! -x "${$program}" ]; then
-		$program="$( which ${$program} )"
-	fi
-done
-SSH="${SSH:-$( which ssh )}"
-NICE="${NICE:-$( which nice )}"
-IONICE="${NICE:-$( which ionice )}"
-RSYNC="${RSYNC:-$( which rsync )}"
-for program in SSH NICE IONICE RSYNC; do
-	if [ ! -x "${$program}" ]; then
-		echo "Unable to find a program for $program." >&2
+SSH="${SSH:-/bin/dbclient}"
+NICE="${NICE:-/bin/nice}"
+IONICE="${IONICE:-/bin/ionice}"
+RSYNC="${RSYNC:-/bin/rsync}"
+
+for program in "$SSH" "$NICE" "$IONICE" "$RSYNC"; do
+	if [ ! -x "$program" ]; then
+		echo "Could not locate $program" >&2
 		exit 1
 	fi
 done
@@ -35,7 +30,7 @@ done
 SSHCMD="$SSH"
 IONICECMD="$IONICE -c 3"
 NICECMD="$NICE -n 10"
-RSYNCCMD="$RSYNC -rlptP -bwlimit $KBPS -e $SSH"
+RSYNCCMD="$RSYNC -rlptP -bwlimit $KBPS -e $SSHCMD"
 UPLOADCMD="$IONICECMD $NICECMD $RSYNCCMD"
 
 usage() {
@@ -46,28 +41,28 @@ VERBOSE="N"
 while [ "${1#-}" != "$1" ]; do
 	for opt in $(echo "${1#-}" | sed -E 's/(.)/\1 /g'); do
 		case "$opt" in
-		"v")
-			VERBOSE="Y"
-			UPLOAD="$UPLOAD -v"
-			;;
-		"q")
-			VERBOSE="N"
-			;;
-		"h")
-			usage
-			exit 0
-			;;
-		"" | " ") ;;
-		*)
-			echo "Unknown option: ${opt}" >&2
-			usage >&2
-			exit 1
-			;;
+			"v")
+				VERBOSE="Y"
+				UPLOAD="$UPLOAD -v"
+				;;
+			"q")
+				VERBOSE="N"
+				;;
+			"h")
+				usage
+				exit 0
+				;;
+			"" | " ") ;;
+			*)
+				echo "Unknown option: ${opt}" >&2
+				usage >&2
+				exit 1
+				;;
 		esac
 	done
 	shift
 done
-if [ "$VERBOSE" == "N" ]; then
+if [ "$VERBOSE" = "N" ]; then
 	UPLOAD="$UPLOAD -q"
 fi
 
@@ -81,32 +76,31 @@ done
 
 for path in "$@"; do
 	case "$path" in
-	*/Movies | */Movies/)
-		if [ "${path%/}" = "${path}" ]; then
-			path="$path"/
-		fi
-		DESTDIR="$DESTBASE/Media/Video/Movies"
-		;;
-	*/TV | */TV/)
-		if [ "${path%/}" = "${path}" ]; then
-			path="$path"/
-		fi
-		DESTDIR="$DESTBASE/Media/Video/TV"
-		;;
-	*/Video | */Videos/)
-		if [ "${path%/}" = "${path}" ]; then
-			path="$path"/
-		fi
-		;;
-	*)
-		while [ "${path%/}" != "$path" ]; do
-			path="${path%/}"
-		done
-		DESTDIR="$DESTBASE/downloads"
-		;;
+		*/Movies | */Movies/)
+			if [ "${path%/}" = "${path}" ]; then
+				path="$path"/
+			fi
+			DESTDIR="$DESTBASE/Media/Video/Movies"
+			;;
+		*/TV | */TV/)
+			if [ "${path%/}" = "${path}" ]; then
+				path="$path"/
+			fi
+			DESTDIR="$DESTBASE/Media/Video/TV"
+			;;
+		*)
+			while [ "${path%/}" != "$path" ]; do
+				path="${path%/}"
+			done
+			DESTDIR="$DESTBASE/downloads"
+			;;
 	esac
 	if [ "$VERBOSE" = "Y" ]; then
 		echo "Uploading $path to $SERVER:$DESTDIR"
 	fi
-	$UPLOAD "${path}" "${SERVER}:${DESTDIR}"
+	$UPLOADCMD "${path}" "${SERVER}:${DESTDIR}"
+	if [ "Y" = "$VERBOSE" ]; then
+		echo "Downloading $SERVER:$DESTDIR/ to $path"
+	fi
+	$UPLOADCMD "${SERVER}:${DESTDIR}/" "$path"
 done
