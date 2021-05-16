@@ -10,7 +10,7 @@ KBPS=4096
 
 SSH="${SSH:-$(which ssh)}"
 NICE="${NICE:-$(which nice)}"
-IONICE="${NICE:-$(which ionice)}"
+IONICE="${IONICE:-$(which ionice)}"
 RSYNC="${RSYNC:-$(which rsync)}"
 
 SSH="${SSH:-/bin/dbclient}"
@@ -20,7 +20,7 @@ RSYNC="${RSYNC:-/bin/rsync}"
 
 for program in "$SSH" "$NICE" "$IONICE" "$RSYNC"; do
 	if [ ! -x "$program" ]; then
-		echo "Could not locate $program" >&2
+		echo "Could not locate $program or equivalent" >&2
 		exit 1
 	fi
 done
@@ -43,7 +43,7 @@ while [ "${1#-}" != "$1" ]; do
 		case "$opt" in
 			"v")
 				VERBOSE="Y"
-				UPLOAD="$UPLOAD -v"
+				UPLOADCMD="$UPLOADCMD -v"
 				;;
 			"q")
 				VERBOSE="N"
@@ -63,7 +63,7 @@ while [ "${1#-}" != "$1" ]; do
 	shift
 done
 if [ "$VERBOSE" = "N" ]; then
-	UPLOAD="$UPLOAD -q"
+	UPLOADCMD="$UPLOADCMD -q"
 fi
 
 for path in "$@"; do
