@@ -1,14 +1,65 @@
 #!/bin/sh
 
+#
+# nicersync
+#
+# POSIX-compatible shell script wrapper for rsync to use limited
+# resources for large and/or frequent uploads and downloads
+#
+# nicersync [-qv] source
+# nicersync -h
+#
+# arguments:
+#   source     source file or directory to upload
+# options:
+#   -q         output only errors
+#   -v         output additional information
+#   -h         show usage information and exit
+#
+# Requirements
+#
+# A POSIX-compliant sh and system are required. Additionally, command-
+# line programs compatible with the commonly-used `ssh', `ionice',
+# `nice', and `rsync' programs are required.
+#
+# Usage
+#
+# Note that the "source" file or directory is checked for readability
+# by nicersync but the "remote" is not (and may be created by rsync). All
+# other warnings from rsync apply: files may be inappropriately overwritten
+# or copied to unexpected directories. Specifically, ensure the name of the
+# "source" ends or doesn't end in a `/' depending on the rsync behavior you
+# want. (I.e., a "source" directory that doesn't end in a `/' will be copied
+# into the "destination" directory, while a "source" that ends in `/' will
+# have its *contents* copied into "destination".)
+#
+# For automated background usage (e.g., cron), set appropriate
+# environment variables and use the -q option. Set up "passwordless"
+# ssh as described at https://www.redhat.com/sysadmin/passwordless-ssh .
+#
+# Configuration
+#
+# Needed programs that are not included in the POSIX specification
+# are sought using `which' if that program is available, and reasonable
+# defaults are checked if the programs are not found. If these are not
+# found automatically, nicersync will give an error message and exit.
+# This may be overridden by setting environment variables to the full
+# path for any programs that aren't found: SSH, NICE, IONICE, RSYNC
+#
+# Further configuration can be performed using other environment
+# variables:
+#
+# KBPS    limit bandwidth to this number of kilobytes per second
+#
+
 # SERVER will be accessed via ssh. Highly recommend setting up passwordless
 # authentication prior to use here.
 SERVER=server1359.seedhost.eu
 DESTBASE="/home/chjones"
 
-# limit bandwidth to this number of kilobytes per second
-KBPS=4096
+KBPS="${KBPS:-4096}"
 
-SSH="${SSH:-$(which ssh)}"
+SSH="${SSH:-$(which ssh || which dbclient)}"
 NICE="${NICE:-$(which nice)}"
 IONICE="${IONICE:-$(which ionice)}"
 RSYNC="${RSYNC:-$(which rsync)}"
