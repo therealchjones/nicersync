@@ -81,7 +81,7 @@ done
 SSHCMD="$SSH"
 IONICECMD="$IONICE -c 3"
 NICECMD="$NICE -n 10"
-RSYNCCMD="$RSYNC -rlptP --bwlimit $KBPS -e $SSHCMD"
+RSYNCCMD="$RSYNC -rlptuP --bwlimit $KBPS -e $SSHCMD"
 UPLOADCMD="$IONICECMD $NICECMD $RSYNCCMD"
 
 usage() {
